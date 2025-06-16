@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>k00lio chats!</title>
   <style>
     :root {
@@ -135,7 +135,7 @@
       const pass = document.getElementById('password').value;
       if (accounts[user] && accounts[user] === pass) {
         currentUser = user;
-        alert(logged in as ${user});
+        alert(`logged in as ${user}`);
         loadMessages();
       } else {
         alert('login failed');
@@ -146,11 +146,17 @@
       const user = document.getElementById('username').value;
       const pass = document.getElementById('password').value;
       if (user && pass) {
+        if (accounts[user]) {
+          alert('username taken');
+          return;
+        }
         accounts[user] = pass;
         localStorage.setItem('accounts', JSON.stringify(accounts));
         currentUser = user;
-        alert(registered as ${user});
+        alert(`registered as ${user}`);
         loadMessages();
+      } else {
+        alert('enter username + password');
       }
     }
 
@@ -162,11 +168,11 @@
         setTimeout(() => error.textContent = '', 5000);
         return;
       }
-      if (msg) {
+      if (msg.trim()) {
         const chatBox = document.getElementById('chatBox');
         const div = document.createElement('div');
         div.className = 'message';
-        div.textContent = [${currentUser}] ${msg};
+        div.textContent = `[${currentUser}] ${msg}`;
         chatBox.appendChild(div);
         document.getElementById('msgInput').value = '';
         chatBox.scrollTop = chatBox.scrollHeight;
