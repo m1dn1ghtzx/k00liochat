@@ -1,4 +1,4 @@
-<!-- supabase version of k00lio chats -->
+<!-- Supabase version of k00lio chats -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +15,7 @@
 
     body {
       margin: 0;
-      font-family: "Comic Sans MS", cursive, sans-serif;
+      font-family: Comic Sans MS;
       background-color: var(--bg-color);
       color: var(--text-color);
     }
@@ -49,17 +49,9 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background-color: var(--primary-color);
-      color: #000;
-    }
-
     input[type="text"], input[type="password"] {
       flex: 1;
       min-width: 200px;
-      background-color: #222;
-      border: 1px solid var(--primary-color);
-      color: var(--text-color);
     }
 
     .chat-box {
@@ -78,7 +70,6 @@
       padding: 0.5rem;
       margin: 0.5rem 0;
       color: var(--text-color);
-      border-radius: 4px;
       word-break: break-word;
     }
 
@@ -86,7 +77,22 @@
       text-align: center;
       color: red;
       margin-top: 0.5rem;
-      min-height: 1.2em;
+    }
+
+    .google-btn {
+      background-color: #4285F4;
+      color: white;
+      border-radius: 4px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+    }
+
+    .google-btn img {
+      width: 20px;
+      height: 20px;
     }
   </style>
 </head>
@@ -94,11 +100,14 @@
   <header>k00lio chats!</header>
 
   <div class="auth">
-    <input type="text" id="username" placeholder="username" autocomplete="off" />
-    <input type="password" id="password" placeholder="password" autocomplete="off" />
+    <input type="text" id="username" placeholder="username">
+    <input type="password" id="password" placeholder="password">
     <button onclick="login()">login</button>
     <button onclick="register()">register</button>
-    <button onclick="logout()" style="background:#d43131;">logout</button>
+    <button class="google-btn" onclick="googleLogin()">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png" alt="google logo" />
+      google login
+    </button>
   </div>
 
   <div class="theme-switcher">
@@ -113,103 +122,34 @@
   <div class="chat-box" id="chatBox"></div>
 
   <div class="chat-input">
-    <input
-      type="text"
-      id="msgInput"
-      placeholder="send a message..."
-      onkeydown="if(event.key==='Enter') sendMsg()"
-      autocomplete="off"
-    />
+    <input type="text" id="msgInput" placeholder="send a message...">
     <button onclick="sendMsg()">send</button>
   </div>
   <div id="errorMsg"></div>
 
   <script>
     const supabaseUrl = 'https://tscklnfdedyqwwczdlxj.supabase.co';
-    const supabaseKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzY2tsbmZkZWR5cXd3Y3pkbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMTM5OTUsImV4cCI6MjA2NTY4OTk5NX0.ZKa08t9naoWEqdcakmuw5i8lbWghBIMLaGRNgwiSQv0';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzY2tsbmZkZWR5cXd3Y3pkbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMTM5OTUsImV4cCI6MjA2NTY4OTk5NX0.ZKa08t9naoWEqdcakmuw5i8lbWghBIMLaGRNgwiSQv0';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-
     let currentUser = null;
 
-    function showError(msg) {
+    async function sendMsg() {
+      const msg = document.getElementById('msgInput').value;
       const error = document.getElementById('errorMsg');
-      error.textContent = msg;
-      setTimeout(() => {
-        error.textContent = '';
-      }, 5000);
-    }
-
-    async function register() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      if (!user || !pass) {
-        showError('username and password required');
+      if (!currentUser) {
+        error.textContent = 'you need to make an account to send messages';
+        setTimeout(() => error.textContent = '', 5000);
         return;
       }
-      const email = user + '@k00lio.fake'; // fake email for supabase
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-      });
-      if (error) {
-        showError('register failed: ' + error.message);
-      } else {
-        alert('registered! pls login now');
-      }
-    }
-
-    async function login() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      if (!user || !pass) {
-        showError('username and password required');
-        return;
-      }
-      const email = user + '@k00lio.fake';
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass,
-      });
-      if (error) {
-        showError('login failed: ' + error.message);
-      } else {
-        currentUser = user;
-        alert('logged in as ' + user);
+      if (msg.trim()) {
+        await supabase.from('messages').insert({ user: currentUser, text: msg });
+        document.getElementById('msgInput').value = '';
         loadMessages();
       }
     }
 
-    async function logout() {
-      await supabase.auth.signOut();
-      currentUser = null;
-      alert('logged out');
-    }
-
-    async function sendMsg() {
-      const msgInput = document.getElementById('msgInput');
-      const msg = msgInput.value.trim();
-      if (!currentUser) {
-        showError('you need to make an account to send messages');
-        return;
-      }
-      if (msg.length === 0) return;
-
-      const { error } = await supabase.from('messages').insert({ user: currentUser, text: msg });
-      if (error) {
-        showError('failed to send message, try again');
-        return;
-      }
-      msgInput.value = '';
-      loadMessages();
-    }
-
     async function loadMessages() {
-      const { data, error } = await supabase.from('messages').select('*').order('id', { ascending: true });
-      if (error) {
-        console.error('error loading messages:', error);
-        return;
-      }
+      const { data } = await supabase.from('messages').select('*').order('id', { ascending: true });
       const chatBox = document.getElementById('chatBox');
       chatBox.innerHTML = '';
       data.forEach(({ user, text }) => {
@@ -231,23 +171,48 @@
         mafioso: '#d4bf24',
         ipadkidd: '#0000ff',
       };
-      root.style.setProperty('--primary-color', themes[theme] || '#32a852');
+      root.style.setProperty('--primary-color', themes[theme]);
     }
 
-    // listen for auth changes to keep currentUser updated
+    function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      if (user && pass) {
+        currentUser = user; // no real auth lol
+        alert(`logged in as ${user}`);
+        loadMessages();
+      } else {
+        alert('login failed');
+      }
+    }
+
+    function register() {
+      login(); // same lazy register as login
+    }
+
+    async function googleLogin() {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) {
+        alert('google login failed');
+        return;
+      }
+      // the actual login flow redirects the page so no extra logic here
+    }
+
+    // listen for auth changes to set currentUser
     supabase.auth.onAuthStateChange((event, session) => {
       if (session && session.user) {
-        currentUser = session.user.email.split('@')[0];
+        currentUser = session.user.email || session.user.user_metadata?.full_name || 'google_user';
         loadMessages();
       } else {
         currentUser = null;
       }
     });
 
-    window.onload = () => {
-      loadMessages();
-      setInterval(loadMessages, 3000);
-    };
+    window.onload = loadMessages;
+    // removed setInterval(loadMessages, 3000);
   </script>
 </body>
 </html>
