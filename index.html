@@ -1,173 +1,50 @@
-<!-- Supabase version of k00lio chats -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>k00lio chats!</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <style>
-    :root {
-      --primary-color: #32a852;
-      --bg-color: #000000;
-      --text-color: #ffffff;
-    }
+async function register() {
+  const user = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value.trim();
+  if (!user || !pass) {
+    alert('username and password required');
+    return;
+  }
+  const { data, error } = await supabase.auth.signUp({
+    email: user + '@k00lio.fake', // gotta fake an email cuz supabase needs it
+    password: pass,
+  });
+  if (error) {
+    alert('register failed: ' + error.message);
+  } else {
+    alert('registered! pls check email (ignore, it wont send tho)');
+  }
+}
 
-    body {
-      margin: 0;
-      font-family: Comic Sans MS;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-    }
+async function login() {
+  const user = document.getElementById('username').value.trim();
+  const pass = document.getElementById('password').value.trim();
+  if (!user || !pass) {
+    alert('login failed: username and password required');
+    return;
+  }
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: user + '@k00lio.fake',
+    password: pass,
+  });
+  if (error) {
+    alert('login failed: ' + error.message);
+  } else {
+    currentUser = user;
+    alert('logged in as ' + user);
+    loadMessages();
+  }
+}
 
-    header {
-      background-color: var(--bg-color);
-      padding: 1rem;
-      text-align: center;
-      font-size: 2rem;
-      font-weight: bold;
-      border: 3px solid var(--primary-color);
-      color: var(--text-color);
-    }
+// also clear currentUser on logout or on page reload if not logged in
 
-    .theme-switcher, .auth, .chat-input {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin: 1rem;
-      flex-wrap: wrap;
-      border: 3px solid var(--primary-color);
-      color: var(--text-color);
-    }
-
-    button, input {
-      padding: 0.5rem 1rem;
-      border: none;
-      font-weight: bold;
-      color: var(--text-color);
-      background-color: #000;
-    }
-
-    input[type="text"], input[type="password"] {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .chat-box {
-      max-width: 800px;
-      margin: auto;
-      background: #111;
-      padding: 1rem;
-      border: 3px solid var(--primary-color);
-      color: var(--text-color);
-    }
-
-    .message {
-      background: #222;
-      padding: 0.5rem;
-      margin: 0.5rem 0;
-      color: var(--text-color);
-    }
-
-    #errorMsg {
-      text-align: center;
-      color: red;
-      margin-top: 0.5rem;
-    }
-  </style>
-</head>
-<body>
-  <header>k00lio chats!</header>
-
-  <div class="auth">
-    <input type="text" id="username" placeholder="username">
-    <input type="password" id="password" placeholder="password">
-    <button onclick="login()">login</button>
-    <button onclick="register()">register</button>
-  </div>
-
-  <div class="theme-switcher">
-    <button onclick="setTheme('k00lduddde')">k00lduddde</button>
-    <button onclick="setTheme('prettyprinncess')">prettyprinncess</button>
-    <button onclick="setTheme('bluudud')">bluudud</button>
-    <button onclick="setTheme('c00lkidd')">c00lkidd</button>
-    <button onclick="setTheme('mafioso')">mafioso</button>
-    <button onclick="setTheme('ipadkidd')">ipadkidd</button>
-  </div>
-
-  <div class="chat-box" id="chatBox"></div>
-
-  <div class="chat-input">
-    <input type="text" id="msgInput" placeholder="send a message...">
-    <button onclick="sendMsg()">send</button>
-  </div>
-  <div id="errorMsg"></div>
-
-  <script>
-    const supabaseUrl = 'https://tscklnfdedyqwwczdlxj.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzY2tsbmZkZWR5cXd3Y3pkbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMTM5OTUsImV4cCI6MjA2NTY4OTk5NX0.ZKa08t9naoWEqdcakmuw5i8lbWghBIMLaGRNgwiSQv0';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
-    let currentUser = null;
-
-    async function sendMsg() {
-      const msg = document.getElementById('msgInput').value;
-      const error = document.getElementById('errorMsg');
-      if (!currentUser) {
-        error.textContent = 'you need to make an account to send messages';
-        setTimeout(() => error.textContent = '', 5000);
-        return;
-      }
-      if (msg.trim()) {
-        await supabase.from('messages').insert({ user: currentUser, text: msg });
-        document.getElementById('msgInput').value = '';
-        loadMessages();
-      }
-    }
-
-    async function loadMessages() {
-      const { data } = await supabase.from('messages').select('*').order('id', { ascending: true });
-      const chatBox = document.getElementById('chatBox');
-      chatBox.innerHTML = '';
-      data.forEach(({ user, text }) => {
-        const div = document.createElement('div');
-        div.className = 'message';
-        div.textContent = `[${user}] ${text}`;
-        chatBox.appendChild(div);
-      });
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function setTheme(theme) {
-      const root = document.documentElement;
-      const themes = {
-        k00lduddde: '#32a852',
-        prettyprinncess: '#ff80c8',
-        bluudud: '#148be0',
-        c00lkidd: '#e03434',
-        mafioso: '#d4bf24',
-        ipadkidd: '#0000ff',
-      };
-      root.style.setProperty('--primary-color', themes[theme]);
-    }
-
-    function login() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      if (user && pass) {
-        currentUser = user; // no actual auth, just temp login
-        alert(`logged in as ${user}`);
-        loadMessages();
-      } else {
-        alert('login failed');
-      }
-    }
-
-    function register() {
-      login(); // same as login, no real register logic
-    }
-
-    window.onload = loadMessages;
-    setInterval(loadMessages, 3000);
-  </script>
-</body>
-</html>
+supabase.auth.onAuthStateChange((event, session) => {
+  if (session && session.user) {
+    // user logged in
+    // get user email, set currentUser without @k00lio.fake
+    currentUser = session.user.email.split('@')[0];
+    loadMessages();
+  } else {
+    currentUser = null;
+  }
+});
