@@ -1,17 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>k00lio chats!</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    :root {
+      --primary-color: #32a852;
+      --bg-color: #000000;
+      --text-color: #ffffff;
+    }
+
+    body {
+      margin: 0;
+      font-family: Comic Sans MS;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+
+    header {
+      background-color: var(--bg-color);
+      padding: 1rem;
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      border: 3px solid var(--primary-color);
+      color: var(--text-color);
+    }
+
+    .theme-switcher, .auth, .chat-input {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      margin: 1rem;
+      flex-wrap: wrap;
+      border: 3px solid var(--primary-color);
+      color: var(--text-color);
+    }
+
+    button, input {
+      padding: 0.5rem 1rem;
+      border: none;
+      font-weight: bold;
+      color: var(--text-color);
+      background-color: #000;
+    }
+
+    input[type="text"], input[type="password"] {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .chat-box {
+      max-width: 800px;
+      margin: auto;
+      background: #111;
+      padding: 1rem;
+      border: 3px solid var(--primary-color);
+      color: var(--text-color);
+    }
+
+    .message {
+      background: #222;
+      padding: 0.5rem;
+      margin: 0.5rem 0;
+      color: var(--text-color);
+    }
+
+    #errorMsg {
+      text-align: center;
+      color: red;
+      margin-top: 0.5rem;
+    }
+  </style>
 </head>
 <body>
   <header>k00lio chats!</header>
 
   <div class="auth">
-    <input type="text" id="username" placeholder="username" />
-    <input type="password" id="password" placeholder="password" />
+    <input type="text" id="username" placeholder="username">
+    <input type="password" id="password" placeholder="password">
     <button onclick="login()">login</button>
     <button onclick="register()">register</button>
   </div>
@@ -28,51 +96,97 @@
   <div class="chat-box" id="chatBox"></div>
 
   <div class="chat-input">
-    <input type="text" id="msgInput" placeholder="say sum..." />
+    <input type="text" id="msgInput" placeholder="say sum...">
     <button onclick="sendMsg()">send</button>
   </div>
-
   <div id="errorMsg"></div>
 
-  <script src="script.js"></script>
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>k00lio chats!</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <header>k00lio chats!</header>
+  <script>
+    let currentUser = null;
+    let accounts = JSON.parse(localStorage.getItem('accounts')) || {};
 
-  <div class="auth">
-    <input type="text" id="username" placeholder="username" />
-    <input type="password" id="password" placeholder="password" />
-    <button onclick="login()">login</button>
-    <button onclick="register()">register</button>
-  </div>
+    function setTheme(theme) {
+      const root = document.documentElement;
+      switch (theme) {
+        case 'k00lduddde':
+          root.style.setProperty('--primary-color', '#32a852');
+          break;
+        case 'prettyprinncess':
+          root.style.setProperty('--primary-color', '#ff80c8');
+          break;
+        case 'bluudud':
+          root.style.setProperty('--primary-color', '#148be0');
+          break;
+        case 'c00lkidd':
+          root.style.setProperty('--primary-color', '#e03434');
+          break;
+        case 'mafioso':
+          root.style.setProperty('--primary-color', '#d4bf24');
+          break;
+        case 'ipadkidd':
+          root.style.setProperty('--primary-color', '#0000ff');
+          break;
+      }
+      saveMessages();
+    }
 
-  <div class="theme-switcher">
-    <button onclick="setTheme('k00lduddde')">k00lduddde</button>
-    <button onclick="setTheme('prettyprinncess')">prettyprinncess</button>
-    <button onclick="setTheme('bluudud')">bluudud</button>
-    <button onclick="setTheme('c00lkidd')">c00lkidd</button>
-    <button onclick="setTheme('mafioso')">mafioso</button>
-    <button onclick="setTheme('ipadkidd')">ipadkidd</button>
-  </div>
+    function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      if (accounts[user] && accounts[user] === pass) {
+        currentUser = user;
+        alert(logged in as ${user});
+        loadMessages();
+      } else {
+        alert('login failed');
+      }
+    }
 
-  <div class="chat-box" id="chatBox"></div>
+    function register() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      if (user && pass) {
+        accounts[user] = pass;
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+        currentUser = user;
+        alert(registered as ${user});
+        loadMessages();
+      }
+    }
 
-  <div class="chat-input">
-    <input type="text" id="msgInput" placeholder="say sum..." />
-    <button onclick="sendMsg()">send</button>
-  </div>
+    function sendMsg() {
+      const msg = document.getElementById('msgInput').value;
+      const error = document.getElementById('errorMsg');
+      if (!currentUser) {
+        error.textContent = 'you need to make an account to send messages';
+        setTimeout(() => error.textContent = '', 5000);
+        return;
+      }
+      if (msg) {
+        const chatBox = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = 'message';
+        div.textContent = [${currentUser}] ${msg};
+        chatBox.appendChild(div);
+        document.getElementById('msgInput').value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+        saveMessages();
+      }
+    }
 
-  <div id="errorMsg"></div>
+    function saveMessages() {
+      const chatBox = document.getElementById('chatBox');
+      localStorage.setItem('chatMessages', chatBox.innerHTML);
+    }
 
-  <script src="script.js"></script>
+    function loadMessages() {
+      const saved = localStorage.getItem('chatMessages');
+      if (saved) {
+        document.getElementById('chatBox').innerHTML = saved;
+      }
+    }
+
+    window.onload = loadMessages;
+  </script>
 </body>
 </html>
