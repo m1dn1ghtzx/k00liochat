@@ -94,10 +94,11 @@
   <header>k00lio chats!</header>
 
   <div class="auth">
-    <input type="text" id="username" placeholder="username" autocomplete="off">
-    <input type="password" id="password" placeholder="password" autocomplete="off">
+    <input type="text" id="username" placeholder="username" autocomplete="off" />
+    <input type="password" id="password" placeholder="password" autocomplete="off" />
     <button onclick="login()">login</button>
     <button onclick="register()">register</button>
+    <button onclick="logout()" style="background:#d43131;">logout</button>
   </div>
 
   <div class="theme-switcher">
@@ -112,32 +113,91 @@
   <div class="chat-box" id="chatBox"></div>
 
   <div class="chat-input">
-    <input type="text" id="msgInput" placeholder="send a message..." onkeydown="if(event.key==='Enter') sendMsg()">
+    <input
+      type="text"
+      id="msgInput"
+      placeholder="send a message..."
+      onkeydown="if(event.key==='Enter') sendMsg()"
+      autocomplete="off"
+    />
     <button onclick="sendMsg()">send</button>
   </div>
   <div id="errorMsg"></div>
 
   <script>
     const supabaseUrl = 'https://tscklnfdedyqwwczdlxj.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzY2tsbmZkZWR5cXd3Y3pkbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMTM5OTUsImV4cCI6MjA2NTY4OTk5NX0.ZKa08t9naoWEqdcakmuw5i8lbWghBIMLaGRNgwiSQv0';
+    const supabaseKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRzY2tsbmZkZWR5cXd3Y3pkbHhqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAxMTM5OTUsImV4cCI6MjA2NTY4OTk5NX0.ZKa08t9naoWEqdcakmuw5i8lbWghBIMLaGRNgwiSQv0';
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
     let currentUser = null;
+
+    function showError(msg) {
+      const error = document.getElementById('errorMsg');
+      error.textContent = msg;
+      setTimeout(() => {
+        error.textContent = '';
+      }, 5000);
+    }
+
+    async function register() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if (!user || !pass) {
+        showError('username and password required');
+        return;
+      }
+      const email = user + '@k00lio.fake'; // fake email for supabase
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password: pass,
+      });
+      if (error) {
+        showError('register failed: ' + error.message);
+      } else {
+        alert('registered! pls login now');
+      }
+    }
+
+    async function login() {
+      const user = document.getElementById('username').value.trim();
+      const pass = document.getElementById('password').value.trim();
+      if (!user || !pass) {
+        showError('username and password required');
+        return;
+      }
+      const email = user + '@k00lio.fake';
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password: pass,
+      });
+      if (error) {
+        showError('login failed: ' + error.message);
+      } else {
+        currentUser = user;
+        alert('logged in as ' + user);
+        loadMessages();
+      }
+    }
+
+    async function logout() {
+      await supabase.auth.signOut();
+      currentUser = null;
+      alert('logged out');
+    }
 
     async function sendMsg() {
       const msgInput = document.getElementById('msgInput');
-      const error = document.getElementById('errorMsg');
       const msg = msgInput.value.trim();
       if (!currentUser) {
-        error.textContent = 'you need to make an account to send messages';
-        setTimeout(() => error.textContent = '', 5000);
+        showError('you need to make an account to send messages');
         return;
       }
       if (msg.length === 0) return;
 
-      const { error: insertError } = await supabase.from('messages').insert({ user: currentUser, text: msg });
-      if (insertError) {
-        error.textContent = 'failed to send message, try again';
-        setTimeout(() => error.textContent = '', 5000);
+      const { error } = await supabase.from('messages').insert({ user: currentUser, text: msg });
+      if (error) {
+        showError('failed to send message, try again');
         return;
       }
       msgInput.value = '';
@@ -174,26 +234,20 @@
       root.style.setProperty('--primary-color', themes[theme] || '#32a852');
     }
 
-    function login() {
-      const user = document.getElementById('username').value.trim();
-      const pass = document.getElementById('password').value.trim();
-      if (user && pass) {
-        currentUser = user; // no real auth, just temp login
-        alert(`logged in as ${user}`);
+    // listen for auth changes to keep currentUser updated
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) {
+        currentUser = session.user.email.split('@')[0];
         loadMessages();
       } else {
-        alert('login failed: username and password required');
+        currentUser = null;
       }
-    }
-
-    function register() {
-      login(); // no real register logic, just login for now
-    }
+    });
 
     window.onload = () => {
       loadMessages();
       setInterval(loadMessages, 3000);
-    }
+    };
   </script>
 </body>
 </html>
