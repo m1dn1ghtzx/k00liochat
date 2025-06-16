@@ -1,9 +1,11 @@
+<!-- Supabase version of k00lio chats -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>k00lio chats!</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     :root {
       --primary-color: #32a852;
@@ -102,65 +104,12 @@
   <div id="errorMsg"></div>
 
   <script>
+    const supabaseUrl = 'https://YOUR_PROJECT.supabase.co';
+    const supabaseKey = 'YOUR_ANON_KEY';
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
     let currentUser = null;
-    let accounts = JSON.parse(localStorage.getItem('accounts')) || {};
 
-    function setTheme(theme) {
-      const root = document.documentElement;
-      switch (theme) {
-        case 'k00lduddde':
-          root.style.setProperty('--primary-color', '#32a852');
-          break;
-        case 'prettyprinncess':
-          root.style.setProperty('--primary-color', '#ff80c8');
-          break;
-        case 'bluudud':
-          root.style.setProperty('--primary-color', '#148be0');
-          break;
-        case 'c00lkidd':
-          root.style.setProperty('--primary-color', '#e03434');
-          break;
-        case 'mafioso':
-          root.style.setProperty('--primary-color', '#d4bf24');
-          break;
-        case 'ipadkidd':
-          root.style.setProperty('--primary-color', '#0000ff');
-          break;
-      }
-      saveMessages();
-    }
-
-    function login() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      if (accounts[user] && accounts[user] === pass) {
-        currentUser = user;
-        alert(`logged in as ${user}`);
-        loadMessages();
-      } else {
-        alert('login failed');
-      }
-    }
-
-    function register() {
-      const user = document.getElementById('username').value;
-      const pass = document.getElementById('password').value;
-      if (user && pass) {
-        if (accounts[user]) {
-          alert('username taken');
-          return;
-        }
-        accounts[user] = pass;
-        localStorage.setItem('accounts', JSON.stringify(accounts));
-        currentUser = user;
-        alert(`registered as ${user}`);
-        loadMessages();
-      } else {
-        alert('enter username + password');
-      }
-    }
-
-    function sendMsg() {
+    async function sendMsg() {
       const msg = document.getElementById('msgInput').value;
       const error = document.getElementById('errorMsg');
       if (!currentUser) {
@@ -169,27 +118,52 @@
         return;
       }
       if (msg.trim()) {
-        const chatBox = document.getElementById('chatBox');
+        await supabase.from('messages').insert({ user: currentUser, text: msg });
+        document.getElementById('msgInput').value = '';
+        loadMessages();
+      }
+    }
+
+    async function loadMessages() {
+      const { data } = await supabase.from('messages').select('*').order('id', { ascending: true });
+      const chatBox = document.getElementById('chatBox');
+      chatBox.innerHTML = '';
+      data.forEach(({ user, text }) => {
         const div = document.createElement('div');
         div.className = 'message';
-        div.textContent = `[${currentUser}] ${msg}`;
+        div.textContent = `[${user}] ${text}`;
         chatBox.appendChild(div);
-        document.getElementById('msgInput').value = '';
-        chatBox.scrollTop = chatBox.scrollHeight;
-        saveMessages();
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function setTheme(theme) {
+      const root = document.documentElement;
+      const themes = {
+        k00lduddde: '#32a852',
+        prettyprinncess: '#ff80c8',
+        bluudud: '#148be0',
+        c00lkidd: '#e03434',
+        mafioso: '#d4bf24',
+        ipadkidd: '#0000ff',
+      };
+      root.style.setProperty('--primary-color', themes[theme]);
+    }
+
+    function login() {
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      if (user && pass) {
+        currentUser = user; // no actual auth, just temp login
+        alert(`logged in as ${user}`);
+        loadMessages();
+      } else {
+        alert('login failed');
       }
     }
 
-    function saveMessages() {
-      const chatBox = document.getElementById('chatBox');
-      localStorage.setItem('chatMessages', chatBox.innerHTML);
-    }
-
-    function loadMessages() {
-      const saved = localStorage.getItem('chatMessages');
-      if (saved) {
-        document.getElementById('chatBox').innerHTML = saved;
-      }
+    function register() {
+      login(); // same as login, no real register logic
     }
 
     window.onload = loadMessages;
